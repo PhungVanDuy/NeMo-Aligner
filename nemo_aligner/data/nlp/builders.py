@@ -22,8 +22,8 @@ from functools import partial
 
 import numpy as np
 import torch
-from datasets import load_dataset
 import torch.utils.data
+from datasets import load_dataset
 from omegaconf.dictconfig import DictConfig
 
 from nemo.collections.nlp.data.language_modeling.megatron.base_dataset_utils import (
