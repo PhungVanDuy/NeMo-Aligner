@@ -21,8 +21,8 @@ import scipy
 import torch
 
 from nemo.collections.nlp.data.language_modeling.megatron.gpt_dataset import _create_ltor_masks_and_position_ids
-from nemo.collections.nlp.data.language_modeling.megatron.gpt_sft_chat_dataset import GPTSFTChatDataset
 from nemo.collections.nlp.data.language_modeling.megatron.gpt_sft_chat_dataset import (
+    GPTSFTChatDataset,
     _get_header_conversation_type_mask_role,
     get_prompt_template_example,
 )
@@ -348,34 +348,32 @@ class DPOModelDataset(Dataset):
 
         return text_ids, len(text_ids)
 
-
     def _convert_messages(self, input_list):  # TODO: (@adithyare) this method should live elsewhare..
         output_dict = {
-            'system': '',
-            'conversations': [],
-            'mask': 'User',
-            'type': 'VALUE_TO_TEXT',
+            "system": "",
+            "conversations": [],
+            "mask": "User",
+            "type": "VALUE_TO_TEXT",
         }
 
         # Extract the system message
         for msg in input_list:
-            if msg['role'] == 'system':
-                output_dict['system'] = msg['content']
+            if msg["role"] == "system":
+                output_dict["system"] = msg["content"]
                 break  # Assuming only one system message
 
         # Build the conversations list
         for msg in input_list:
-            if msg['role'] != 'system':
+            if msg["role"] != "system":
                 conversation_entry = {
-                    'from': msg['role'].capitalize(),  # Capitalize 'user' and 'assistant'
-                    'value': msg['content'],
-                    'label': None,
+                    "from": msg["role"].capitalize(),  # Capitalize 'user' and 'assistant'
+                    "value": msg["content"],
+                    "label": None,
                 }
-                output_dict['conversations'].append(conversation_entry)
+                output_dict["conversations"].append(conversation_entry)
 
         return output_dict
-    
-    
+
     def convert(self, messages):
         """
         args:
@@ -399,18 +397,14 @@ class DPOModelDataset(Dataset):
         """Returns a pair of chosen/rejected pairs, their respective lengths, and labels."""
         payload = self.data[idx]
 
-        prompt_fmtd = self.convert(payload["prompt"])   # (@adithyare) read var as "prompt formatted"
+        prompt_fmtd = self.convert(payload["prompt"])  # (@adithyare) read var as "prompt formatted"
         prompt, prompt_len = self.encode(prompt_fmtd, append_eod=False)
 
         chosen_fmtd = self.convert(payload["prompt"] + [payload["chosen_response"]])
-        chosen, chosen_len = self.encode(
-            chosen_fmtd, append_eod=self.cfg.data.get("append_eod", False)
-        )
+        chosen, chosen_len = self.encode(chosen_fmtd, append_eod=self.cfg.data.get("append_eod", False))
 
         rejected_fmtd = self.convert(payload["prompt"] + [payload["rejected_response"]])
-        reject, reject_len = self.encode(
-            rejected_fmtd, append_eod=self.cfg.data.get("append_eod", False)
-        )
+        reject, reject_len = self.encode(rejected_fmtd, append_eod=self.cfg.data.get("append_eod", False))
         # chosen_response_only, chosen_response_len = self.encode(payload['chosen_response'])
         # reject_response_only, reject_response_len = self.encode(payload['rejected_response'])
         chosen_labels = ([-100] * prompt_len) + chosen[prompt_len:]
