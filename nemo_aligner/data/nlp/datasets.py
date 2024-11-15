@@ -22,6 +22,10 @@ import torch
 
 from nemo.collections.nlp.data.language_modeling.megatron.gpt_dataset import _create_ltor_masks_and_position_ids
 from nemo.collections.nlp.data.language_modeling.megatron.gpt_sft_chat_dataset import GPTSFTChatDataset
+from nemo.collections.nlp.data.language_modeling.megatron.gpt_sft_chat_dataset import (
+    _get_header_conversation_type_mask_role,
+    get_prompt_template_example,
+)
 from nemo.core import Dataset
 from nemo.utils import logging
 
@@ -343,6 +347,42 @@ class DPOModelDataset(Dataset):
             text_ids.append(self.tokenizer.eos_id)
 
         return text_ids, len(text_ids)
+
+    def _convert_messages(self, input_list):
+        output_dict = {
+            'system': '',
+            'conversations': [],
+            'mask': 'User',
+            'type': 'VALUE_TO_TEXT',
+        }
+
+        # Extract the system message
+        for msg in input_list:
+            if msg['role'] == 'system':
+                output_dict['system'] = msg['content']
+                break  # Assuming only one system message
+
+        # Build the conversations list
+        for msg in input_list:
+            if msg['role'] != 'system':
+                conversation_entry = {
+                    'from': msg['role'].capitalize(),  # Capitalize 'user' and 'assistant'
+                    'value': msg['content'],
+                    'label': None,
+                }
+                output_dict['conversations'].append(conversation_entry)
+
+        return output_dict
+    
+    
+    def convert(self, messages):
+        special_tokens = self.model.cfg.data.chat_prompt_tokens
+        nemo_source = self._convert_messages(messages)
+        header, conversation, data_type, mask_role = _get_header_conversation_type_mask_role(
+            nemo_source, special_tokens
+        )
+        len_strip = len(special_tokens['end_of_turn'] + special_tokens['turn_start'])
+        conversation = conversation[:-len_strip]
 
     def __getitem__(self, idx):
         """Returns a pair of chosen/rejected pairs, their respective lengths, and labels."""
