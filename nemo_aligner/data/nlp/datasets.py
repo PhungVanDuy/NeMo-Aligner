@@ -348,7 +348,7 @@ class DPOModelDataset(Dataset):
 
         return text_ids, len(text_ids)
 
-    def _convert_messages(self, input_list):
+    def _convert_messages(self, input_list):  # TODO: (@adithyare) this method should live elsewhare..
         output_dict = {
             'system': '',
             'conversations': [],
@@ -376,23 +376,39 @@ class DPOModelDataset(Dataset):
     
     
     def convert(self, messages):
-        special_tokens = self.model.cfg.data.chat_prompt_tokens
+        """
+        args:
+            messages: is a list of dicts in the openai format
+                for example:
+                [{"role": "system", "content": "you are helpful},
+                {"role": "user", "content": "Why is the sky blue?"},
+                {"role": "assistant", "content": "Because blablabla"},
+                ...]
+        returns:
+            conversation:  is a string formatted with the chat template
+        """
+        special_tokens = self.cfg.data.chat_prompt_tokens
         nemo_source = self._convert_messages(messages)
         header, conversation, data_type, mask_role = _get_header_conversation_type_mask_role(
             nemo_source, special_tokens
         )
-        len_strip = len(special_tokens['end_of_turn'] + special_tokens['turn_start'])
-        conversation = conversation[:-len_strip]
+        return conversation
 
     def __getitem__(self, idx):
         """Returns a pair of chosen/rejected pairs, their respective lengths, and labels."""
         payload = self.data[idx]
-        prompt, prompt_len = self.encode(payload["prompt"], append_eod=False)
+
+        prompt_fmtd = self.convert(payload["prompt"])   # (@adithyare) read var as "prompt formatted"
+        prompt, prompt_len = self.encode(prompt_fmtd, append_eod=False)
+
+        chosen_fmtd = self.convert(payload["prompt"] + [payload["chosen_response"]])
         chosen, chosen_len = self.encode(
-            payload["prompt"] + payload["chosen_response"], append_eod=self.cfg.data.get("append_eod", False)
+            chosen_fmtd, append_eod=self.cfg.data.get("append_eod", False)
         )
+
+        rejected_fmtd = self.convert(payload["prompt"] + [payload["rejected_response"]])
         reject, reject_len = self.encode(
-            payload["prompt"] + payload["rejected_response"], append_eod=self.cfg.data.get("append_eod", False)
+            rejected_fmtd, append_eod=self.cfg.data.get("append_eod", False)
         )
         # chosen_response_only, chosen_response_len = self.encode(payload['chosen_response'])
         # reject_response_only, reject_response_len = self.encode(payload['rejected_response'])
