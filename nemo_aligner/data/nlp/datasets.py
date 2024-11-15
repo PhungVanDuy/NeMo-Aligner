@@ -348,6 +348,7 @@ class DPOModelDataset(Dataset):
 
         return text_ids, len(text_ids)
 
+
     def _convert_messages(self, input_list):  # TODO: (@adithyare) this method should live elsewhare..
         output_dict = {
             'system': '',
