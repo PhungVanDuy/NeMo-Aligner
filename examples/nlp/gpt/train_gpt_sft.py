@@ -40,6 +40,7 @@ from nemo_aligner.utils.train_script_utils import (
     retrieve_custom_trainer_state_dict,
 )
 from nemo_aligner.utils.utils import load_and_override_model_config, load_from_nemo
+
 """Script to start SFT training"""
 
 OmegaConf.register_new_resolver("multiply", lambda x, y: x * y, replace=True)
@@ -63,7 +64,7 @@ def main(cfg) -> None:
         cfg.model.precision = cfg.trainer.precision
 
     ptl_model = load_from_nemo(
-        MambaSFTModel if cfg.model.mamba_hybrid else GPTSFTModel,
+        MambaSFTModel if cfg.model.get("mamba_hybrid", False) else GPTSFTModel,
         cfg,
         trainer,
         strict=True,
