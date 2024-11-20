@@ -132,11 +132,11 @@ model:
   data:
     chat: False # whether use chatbot data or not
     chat_prompt_tokens:  # special tokens for the chat prompts, a dictionary of {token_type: token}. note that some tokenizer may combine the characters at the junction between {end_of_turn}{turn_start}. e.g. '<im end><im start>', the '><' sometimes is merged to be a single token. This is not supported, try to avoid
-      system_turn_start: "<|start_header_id|>"
-      turn_start: "<|start_header_id|>"
-      label_start: "<|start_header_id|>"
-      end_of_turn: "<|eot_id|>"  # \0x0A is '\n'
-      end_of_name: "<|end_header_id|>"  # \0x0A is '\n'
+      system_turn_start: "<|im_start|>"
+      turn_start: "<|im_start|>"
+      label_start: "<|im_start|>"
+      end_of_turn: "<|im_end|>"  # \0x0A is '\n'
+      end_of_name: "" # \0x0A is '\n'
     sample: False # create the index mapping files for the sample data, so max_steps * global_batch_size can be larger than the dataset size
     num_workers: 0
     train_ds:

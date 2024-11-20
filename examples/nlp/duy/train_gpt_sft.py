@@ -42,11 +42,11 @@ from nemo_aligner.utils.train_script_utils import (
 from nemo_aligner.utils.utils import load_from_nemo
 
 
-from rlhf_datasets import LLama3ChatDataset
+from rlhf_datasets import LLama3ChatDataset, Qwen2ChatDataset
 
 
-def build_sft_dataset_llama3(data_cfg, tokenizer, num_samples, answer_only_loss=True, is_chat=True, special_tokens=None):
-    dataset_cls = LLama3ChatDataset
+def build_sft_dataset_custom(data_cfg, tokenizer, num_samples, answer_only_loss=True, is_chat=True, special_tokens=None):
+    dataset_cls = Qwen2ChatDataset # or LLama3ChatDataset
     dataset = dataset_cls(
         file_path=data_cfg.file_path,
         tokenizer=tokenizer,
@@ -210,7 +210,7 @@ def main(cfg) -> None:
             num_samples = cfg.trainer.sft.max_steps * train_data_cfg.global_batch_size
     else:
         num_samples = None
-    train_ds = build_sft_dataset_llama3(
+    train_ds = build_sft_dataset_custom(
         train_data_cfg,
         ptl_model.tokenizer,
         num_samples,
@@ -235,7 +235,7 @@ def main(cfg) -> None:
         num_samples = cfg.trainer.sft.limit_val_batches * val_data_cfg.global_batch_size
     else:
         num_samples = None
-    validation_ds = build_sft_dataset(
+    validation_ds = build_sft_dataset_custom(
         val_data_cfg,
         ptl_model.tokenizer,
         num_samples,
